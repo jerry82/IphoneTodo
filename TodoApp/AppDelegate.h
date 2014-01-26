@@ -7,9 +7,17 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "sqlite3.h"
+#import "FMDatabase.h"
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@interface AppDelegate : UIResponder <UIApplicationDelegate> {
+    NSMutableArray *todoList;
+    FMDatabase *db;
+    NSString* dbPath;
+}
 
 @property (strong, nonatomic) UIWindow *window;
+
+@property (nonatomic, retain) NSMutableArray *todoList;
 
 @end

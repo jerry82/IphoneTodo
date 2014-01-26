@@ -7,12 +7,85 @@
 //
 
 #import "AppDelegate.h"
+#import "ListItem.h"
+#import "DBManager.h"
+#import "AppConfig.h"
+#import "ListViewController.h"
+
+@interface AppDelegate (Private)
+
+- (void) createCopiedDBIfNeeded;
+- (void) initDB;
+
+@end
 
 @implementation AppDelegate
+
+@synthesize window, todoList;
+
+- (void) createCopiedDBIfNeeded {
+    BOOL success;
+    
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    
+    NSError *error;
+    
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentationDirectory, NSUserDomainMask, YES);
+    
+    NSString *docDir = [paths objectAtIndex:0];
+    
+    //check and create directory
+    BOOL isDirectory;
+    if (![fileManager fileExistsAtPath:docDir isDirectory:&isDirectory]) {
+        NSLog(@"target folder not found. creating folder...");
+        NSDictionary *attr = [NSDictionary dictionaryWithObject:NSFileProtectionComplete
+                                                         forKey:NSFileProtectionKey];
+        [fileManager createDirectoryAtPath:docDir withIntermediateDirectories:YES attributes:attr error:&error];
+        if (error) {
+            NSLog(@"Error creating document folder: %@",[error localizedDescription]);
+            return;
+        }
+    }
+    
+    NSString *writePath = [docDir stringByAppendingPathComponent:DATABASE_FILE];
+    NSLog(@"writepath: %@", writePath);
+    
+    success = [fileManager fileExistsAtPath:writePath];
+    
+    if (success)
+        return;
+    
+    NSString *defaultPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:DATABASE_FILE];
+   
+    success = [fileManager copyItemAtPath:defaultPath toPath:writePath error:&error];
+    
+    if (!success) {
+        NSAssert1(0, @"Error: failed to copy data file with message '%@'", [error localizedDescription]);
+    }
+}
+
+- (void) initDB {
+    
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentationDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    
+    DatabasePath = [documentsDirectory stringByAppendingPathComponent:DATABASE_FILE];
+    todoList = [[DBManager sharedInstance] getAllLists];
+}
+
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     // Override point for customization after application launch.
+    
+    [self createCopiedDBIfNeeded];
+    [self initDB];
+    
+    UINavigationController *navController = (UINavigationController*) self.window.rootViewController;
+    //TasksViewController *todoListViewController = (TasksViewController*) [[navController viewControllers] objectAtIndex:0];
+    ListViewController *lvController = (ListViewController*) [[navController viewControllers] objectAtIndex:0];
+    lvController.allLists = self.todoList;
+
     return YES;
 }
 							
